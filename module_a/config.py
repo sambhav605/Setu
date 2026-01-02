@@ -92,3 +92,12 @@ LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 # PDF extraction settings
 PDF_EXTRACTION_METHOD = "pdfplumber"  # Options: "pdfplumber", "pypdf2"
 PDF_FALLBACK_METHOD = "pypdf2"  # Fallback if primary fails
+
+# Vector database settings (Step 3)
+VECTOR_DB_DIR = DATA_DIR / "vector_db"
+EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
+EMBEDDING_BATCH_SIZE = 32
+
+# Retrieval settings
+DEFAULT_RETRIEVAL_K = 5  # Number of chunks to retrieve
+
