@@ -126,7 +126,8 @@ export default function Home() {
         </section>
 
         {/* CTA Section */}
-        <section className="py-20 bg-primary text-primary-foreground relative overflow-hidden">
+        {/** This is the section we can add to get the Create account section */}
+        {/* <section className="py-20 bg-primary text-primary-foreground relative overflow-hidden">
           <div className="absolute inset-0 opacity-10 nepali-pattern" />
           <div className="container relative text-center space-y-6">
             <h2 className="text-3xl md:text-4xl font-bold">Ready to take control of your legal journey?</h2>
@@ -137,7 +138,7 @@ export default function Home() {
               <Link href="/register">Create Your Account</Link>
             </Button>
           </div>
-        </section>
+        </section> */}
       </main>
       <Footer />
     </div>

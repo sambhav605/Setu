@@ -16,6 +16,7 @@ export function Navbar() {
     { label: "Home", href: "/" },
     { label: "Chatbot", href: "/chatbot", icon: MessageSquare },
     { label: "Bias Checker", href: "/bias-checker", icon: Search },
+    { label: "Letter Generator", href: "/letter-generator" },
     { label: "Resources", href: "/resources" },
   ]
 
@@ -36,7 +37,8 @@ export function Navbar() {
               {item.label}
             </Link>
           ))}
-          {user ? (
+          {/* Logic to implement the user signin and signup option */}
+          {/* {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
@@ -67,10 +69,10 @@ export function Navbar() {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <Button asChild className="bg-primary hover:bg-primary/90">
-              <Link href="/login">Login</Link>
-            </Button>
-          )}
+            // <Button asChild className="bg-primary hover:bg-primary/90">
+            //   <Link href="/login">Login</Link>
+            // </Button>
+          )} */}
         </div>
 
         {/* Mobile Navigation */}

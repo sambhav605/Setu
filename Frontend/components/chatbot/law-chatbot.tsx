@@ -9,6 +9,8 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Send, Scale, User, Download, Plus, MessageSquare } from "lucide-react"
 import { cn } from "@/lib/utils"
+import ReactMarkdown from "react-markdown"
+import remarkGfm from "remark-gfm"
 
 interface Message {
   id: string
@@ -38,12 +40,19 @@ export function LawChatbot() {
   ]
 
   useEffect(() => {
-    if (scrollAreaRef.current) {
-      const scrollContainer = scrollAreaRef.current.querySelector("[data-radix-scroll-area-viewport]")
-      if (scrollContainer) {
-        scrollContainer.scrollTop = scrollContainer.scrollHeight
+    // Scroll to bottom whenever messages change
+    const timer = setTimeout(() => {
+      if (scrollAreaRef.current) {
+        const scrollContainer = scrollAreaRef.current.querySelector("[data-radix-scroll-area-viewport]")
+        if (scrollContainer) {
+          scrollContainer.scrollTo({
+            top: scrollContainer.scrollHeight,
+            behavior: "smooth",
+          })
+        }
       }
-    }
+    }, 100)
+    return () => clearTimeout(timer)
   }, [messages, isTyping])
 
   const handleSend = async (content: string) => {
@@ -61,7 +70,7 @@ export function LawChatbot() {
     setIsTyping(true)
 
     try {
-      const response = await fetch("/api/python/chat", {
+      const response = await fetch("/api/Legal_Chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -75,12 +84,19 @@ export function LawChatbot() {
       const assistantMsg: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: data.content || "I am having trouble connecting to my legal database.",
+        content: data.content || data.error || "I am having trouble connecting to my legal database.",
         timestamp: new Date(),
       }
       setMessages((prev) => [...prev, assistantMsg])
     } catch (error) {
-      console.error("[v0] Chat error:", error)
+      console.error("[Legal Chat Error]:", error)
+      const errorMsg: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: "I encountered an error while processing your request. Please ensure the backend server is running.",
+        timestamp: new Date(),
+      }
+      setMessages((prev) => [...prev, errorMsg])
     } finally {
       setIsTyping(false)
     }
@@ -145,9 +161,9 @@ export function LawChatbot() {
           </Button>
         </CardHeader>
 
-        <CardContent className="flex-1 p-0">
-          <ScrollArea ref={scrollAreaRef} className="h-full p-4 md:p-6">
-            <div className="space-y-6 max-w-4xl mx-auto">
+        <CardContent className="flex-1 p-0 overflow-hidden">
+          <ScrollArea ref={scrollAreaRef} className="h-full">
+            <div className="space-y-6 max-w-4xl mx-auto p-4 md:p-6">
               {messages.map((m) => (
                 <div
                   key={m.id}
@@ -172,7 +188,43 @@ export function LawChatbot() {
                           : "bg-muted/80 backdrop-blur-sm rounded-tl-none border",
                       )}
                     >
-                      {m.content}
+                      {m.role === "assistant" ? (
+                        <div className="prose prose-sm dark:prose-invert max-w-none overflow-wrap-anywhere wrap-break-word">
+                          <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            components={{
+                              p: ({ children }) => <p className="mb-3 last:mb-0 leading-relaxed">{children}</p>,
+                              strong: ({ children }) => <strong className="font-semibold text-foreground">{children}</strong>,
+                              ul: ({ children }) => <ul className="list-disc list-inside mb-3 space-y-1">{children}</ul>,
+                              ol: ({ children }) => <ol className="list-decimal list-inside mb-3 space-y-1">{children}</ol>,
+                              li: ({ children }) => <li className="leading-relaxed">{children}</li>,
+                              a: ({ href, children }) => (
+                                <a
+                                  href={href}
+                                  className="text-primary hover:underline underline-offset-2"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  {children}
+                                </a>
+                              ),
+                              h1: ({ children }) => <h1 className="text-lg font-bold mb-2 mt-4 first:mt-0">{children}</h1>,
+                              h2: ({ children }) => <h2 className="text-base font-bold mb-2 mt-3 first:mt-0">{children}</h2>,
+                              h3: ({ children }) => <h3 className="text-sm font-semibold mb-2 mt-2 first:mt-0">{children}</h3>,
+                              code: ({ children }) => (
+                                <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono">{children}</code>
+                              ),
+                              pre: ({ children }) => (
+                                <pre className="bg-muted p-3 rounded-lg overflow-x-auto mb-3 text-xs">{children}</pre>
+                              ),
+                            }}
+                          >
+                            {m.content}
+                          </ReactMarkdown>
+                        </div>
+                      ) : (
+                        <div className="wrap-break-word">{m.content}</div>
+                      )}
                     </div>
                     <span className="text-[10px] text-muted-foreground px-1">
                       {m.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
