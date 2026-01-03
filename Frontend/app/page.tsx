@@ -14,10 +14,10 @@ export default function Home() {
         <section className="relative py-20 md:py-32 overflow-hidden">
           <div className="absolute inset-0 nepali-pattern -z-10" />
           <div className="container relative text-center space-y-8">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold mb-4 border border-primary/20">
+            {/* <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold mb-4 border border-primary/20">
               <CheckCircle className="h-3 w-3" />
               Trusted by 5,000+ Nepali Citizens
-            </div>
+            </div> */}
             <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-balance">
               Know Your Rights - <span className="text-primary">Nepal Legal Assistance</span>
             </h1>
@@ -88,14 +88,14 @@ export default function Home() {
                   <div className="h-12 w-12 rounded-lg bg-success/10 flex items-center justify-center mb-4">
                     <BookOpen className="h-6 w-6 text-success" />
                   </div>
-                  <CardTitle>Legal Resources</CardTitle>
+                  <CardTitle>Letter Generator</CardTitle>
                   <CardDescription>
-                    Browse through a collection of simplified legal documents and guides.
+                    Generate professional government letters effortlessly. Describe what you need, provide the required information, and get an official letter tailored to your reques
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <Button variant="link" className="p-0 h-auto text-success" asChild>
-                    <Link href="/resources">Explore resources →</Link>
+                    <Link href="/letter-generator">Generate Letters →</Link>
                   </Button>
                 </CardContent>
               </Card>
@@ -103,8 +103,9 @@ export default function Home() {
           </div>
         </section>
 
+        {/* It is the section that shows the users stats */}
         {/* Statistics Section */}
-        <section className="py-20 border-y">
+        {/* <section className="py-20 border-y">
           <div className="container grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             <div className="space-y-2">
               <div className="text-4xl font-bold text-primary">15k+</div>
@@ -123,7 +124,7 @@ export default function Home() {
               <p className="text-sm text-muted-foreground uppercase tracking-wider font-semibold">Satisfaction Rate</p>
             </div>
           </div>
-        </section>
+        </section> */}
 
         {/* CTA Section */}
         {/** This is the section we can add to get the Create account section */}

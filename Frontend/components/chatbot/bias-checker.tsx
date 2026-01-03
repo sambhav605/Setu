@@ -14,6 +14,7 @@ interface BiasedSentence {
   category: string
   confidence: number
   suggestion: string | null
+  explanation: string | null
   success: boolean
 }
 
@@ -302,6 +303,16 @@ export function BiasChecker() {
                                 {item.original}
                               </p>
                             </div>
+                            {item.explanation && (
+                              <div>
+                                <p className="text-xs font-bold text-amber-600 uppercase tracking-wider mb-1">
+                                  Why is this biased?
+                                </p>
+                                <p className="text-xs leading-relaxed bg-amber-50 dark:bg-amber-950/20 p-2 rounded border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-100">
+                                  {item.explanation}
+                                </p>
+                              </div>
+                            )}
                             {item.suggestion && item.success ? (
                               <div>
                                 <p className="text-xs font-bold text-success uppercase tracking-wider mb-1">

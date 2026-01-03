@@ -63,6 +63,7 @@ export async function POST(req: NextRequest) {
       sentence: string
       category: string
       confidence: number
+      explanation?: string
     }> = []
 
     // Process batch results
@@ -93,6 +94,7 @@ export async function POST(req: NextRequest) {
       category: string
       confidence: number
       suggestion: string | null
+      explanation: string | null
       success: boolean
     }> = []
 
@@ -119,11 +121,28 @@ export async function POST(req: NextRequest) {
           const original = biasedSentencesData[i]
           const debiasResult = debiasData.items?.[i]?.result
 
+          // Generate explanation based on category
+          const categoryExplanations: Record<string, string> = {
+            gender: "This sentence contains gender-based bias, using language that may stereotype, exclude, or unfairly characterize individuals based on their gender.",
+            religional: "This sentence contains religious bias, using language that may discriminate against or unfairly characterize individuals based on their religious beliefs.",
+            caste: "This sentence contains caste-based bias, using language that may perpetuate discrimination or unfair treatment based on caste identity.",
+            religion: "This sentence contains religious bias, with language that may show prejudice or discrimination based on religious affiliation.",
+            appearence: "This sentence contains appearance-based bias, using language that may judge or discriminate based on physical appearance or looks.",
+            socialstatus: "This sentence contains social status bias, using language that may discriminate or show prejudice based on socioeconomic status or class.",
+            political: "This sentence contains political bias, showing unfair preference or prejudice toward a particular political viewpoint or party.",
+            Age: "This sentence contains age-based bias, using language that may stereotype or discriminate based on age or generation.",
+            Disablity: "This sentence contains disability-based bias, using language that may discriminate against or unfairly characterize individuals with disabilities.",
+            amiguity: "This sentence contains ambiguous language that may lead to misinterpretation or unclear bias.",
+          }
+
+          const explanation = categoryExplanations[original.category] || "This sentence has been flagged for potential bias."
+
           suggestionsData.push({
             original: original.sentence,
             category: original.category,
             confidence: original.confidence,
             suggestion: debiasResult?.suggestion || null,
+            explanation: explanation,
             success: debiasResult?.success || false,
           })
         }
@@ -136,6 +155,7 @@ export async function POST(req: NextRequest) {
             category: item.category,
             confidence: item.confidence,
             suggestion: null,
+            explanation: null,
             success: false,
           })
         }

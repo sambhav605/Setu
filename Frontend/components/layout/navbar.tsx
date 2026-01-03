@@ -17,7 +17,7 @@ export function Navbar() {
     { label: "Chatbot", href: "/chatbot", icon: MessageSquare },
     { label: "Bias Checker", href: "/bias-checker", icon: Search },
     { label: "Letter Generator", href: "/letter-generator" },
-    { label: "Resources", href: "/resources" },
+    // { label: "Resources", href: "/resources" },
   ]
 
   return (
