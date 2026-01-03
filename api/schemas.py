@@ -94,3 +94,59 @@ class BatchBiasDetectionResponse(BaseModel):
     success: bool
     items: List[BatchBiasItem]
     error: Optional[str] = None
+
+
+# Debiasing Schemas (LLM-based suggestions)
+class DebiasSentenceRequest(BaseModel):
+    sentence: str
+    category: str
+    context: Optional[str] = None  # optional surrounding text for better rewriting
+
+
+class DebiasSentenceResponse(BaseModel):
+    success: bool
+    original_sentence: str
+    category: str
+    suggestion: Optional[str] = None
+    rationale: Optional[str] = None
+    error: Optional[str] = None
+
+
+class DebiasBatchItem(BaseModel):
+    index: int
+    input: DebiasSentenceRequest
+    result: DebiasSentenceResponse
+
+
+class DebiasBatchRequest(BaseModel):
+    items: List[DebiasSentenceRequest]
+
+
+class DebiasBatchResponse(BaseModel):
+    success: bool
+    items: List[DebiasBatchItem]
+    error: Optional[str] = None
+
+# PDF Processing Schemas
+class PDFProcessingResponse(BaseModel):
+    success: bool
+    sentences: List[str]
+    total_sentences: int
+    raw_text: Optional[str] = None
+    filename: Optional[str] = None
+    error: Optional[str] = None
+
+class PDFToBiasDetectionRequest(BaseModel):
+    # This is handled via Form data in the route, but good to have schema if needed for documentation or client generation
+    # However, the route uses UploadFile which is not directly compatible with Pydantic models in the same way for the file part.
+    # But the response model is needed.
+    pass
+
+class PDFToBiasDetectionResponse(BaseModel):
+    success: bool
+    total_sentences: int
+    biased_count: int
+    neutral_count: int
+    results: List[BiasResult]
+    filename: Optional[str] = None
+    error: Optional[str] = None

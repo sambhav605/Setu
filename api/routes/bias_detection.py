@@ -6,11 +6,17 @@ from api.schemas import (
     BatchBiasDetectionRequest,
     BatchBiasDetectionResponse,
     BatchBiasItem,
+    DebiasSentenceRequest,
+    DebiasSentenceResponse,
+    DebiasBatchRequest,
+    DebiasBatchResponse,
+    DebiasBatchItem,
 )
 from typing import List
 import re
 from transformers import pipeline
 import torch
+from module_a.llm_client import MistralClient
 
 router = APIRouter()
 
@@ -30,6 +36,13 @@ try:
 except Exception as e:
     print(f"Error loading model: {e}")
     classifier = None
+
+# Initialize Mistral client for debiasing suggestions
+try:
+    mistral_client = MistralClient()
+except Exception as e:
+    print(f"Error initializing Mistral client: {e}")
+    mistral_client = None
 
 # Label mapping
 id_to_label = {
@@ -119,6 +132,59 @@ def run_bias_detection(text: str, confidence_threshold: float) -> BiasDetectionR
     )
 
 
+def generate_debiased_sentence(payload: DebiasSentenceRequest) -> DebiasSentenceResponse:
+    """Use Mistral to suggest a bias-free rewrite for a sentence."""
+    if mistral_client is None or mistral_client.client is None:
+        return DebiasSentenceResponse(
+            success=False,
+            original_sentence=payload.sentence,
+            category=payload.category,
+            suggestion=None,
+            rationale="Mistral client not available. Provide MISTRAL_API_KEY to enable debiasing.",
+            error="LLM unavailable",
+        )
+
+    system_prompt = (
+        "You are a Nepali editor. Rewrite the given sentence to remove bias while keeping the original meaning, tone, and formality. "
+        "Return only ONE rewritten sentence in Nepali, no explanations, no English, no context echoes."
+    )
+
+    user_prompt = (
+        f"Category: {payload.category}\n"
+        f"Sentence: {payload.sentence}\n"
+        f"Context: {payload.context or 'N/A'}\n\n"
+        "Rewrite this single sentence in Nepali so it is neutral and inclusive. Output only the rewritten sentence."
+    )
+
+    try:
+        raw = mistral_client.generate_response(
+            prompt=user_prompt,
+            system_prompt=system_prompt,
+            temperature=0.3,
+        )
+        # Post-process: keep first line, strip extras
+        suggestion = raw.splitlines()[0].strip()
+        if payload.sentence.rstrip().endswith('।') and not suggestion.endswith('।'):
+            suggestion += '।'
+        return DebiasSentenceResponse(
+            success=True,
+            original_sentence=payload.sentence,
+            category=payload.category,
+            suggestion=suggestion.strip(),
+            rationale=None,
+            error=None,
+        )
+    except Exception as e:
+        return DebiasSentenceResponse(
+            success=False,
+            original_sentence=payload.sentence,
+            category=payload.category,
+            suggestion=None,
+            rationale=None,
+            error=str(e),
+        )
+
+
 @router.post("/detect-bias", response_model=BiasDetectionResponse)
 async def detect_bias(request: BiasDetectionRequest):
     """Detect bias in Nepali text using a fine-tuned model."""
@@ -164,3 +230,23 @@ async def health_check():
         "model_loaded": classifier is not None,
         "model_name": "sangy1212/distilbert-base-nepali-fine-tuned"
     }
+
+
+@router.post("/debias-sentence", response_model=DebiasSentenceResponse)
+async def debias_sentence(request: DebiasSentenceRequest):
+    """Suggest a bias-free alternative for a single sentence using Mistral."""
+    return generate_debiased_sentence(request)
+
+
+@router.post("/debias-sentence/batch", response_model=DebiasBatchResponse)
+async def debias_sentence_batch(request: DebiasBatchRequest):
+    """Suggest bias-free alternatives for multiple sentences."""
+    if not request.items:
+        return DebiasBatchResponse(success=False, items=[], error="No items provided")
+
+    results: List[DebiasBatchItem] = []
+    for idx, item in enumerate(request.items):
+        result = generate_debiased_sentence(item)
+        results.append(DebiasBatchItem(index=idx, input=item, result=result))
+
+    return DebiasBatchResponse(success=True, items=results)

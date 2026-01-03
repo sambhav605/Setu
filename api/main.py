@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from api.routes import law_explanation, letter_generation, bias_detection
+from api.routes import law_explanation, letter_generation, bias_detection, pdf_processing
 
 app = FastAPI(
     title="Nepal Justice Weaver API",
@@ -21,6 +21,7 @@ app.add_middleware(
 app.include_router(law_explanation.router, prefix="/api/v1", tags=["Law Explanation"])
 app.include_router(letter_generation.router, prefix="/api/v1", tags=["Letter Generation"])
 app.include_router(bias_detection.router, prefix="/api/v1", tags=["Bias Detection"])
+app.include_router(pdf_processing.router, prefix="/api/v1", tags=["PDF Processing"])
 
 @app.get("/")
 async def root():
