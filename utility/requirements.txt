@@ -1,0 +1,14 @@
+
+# PDF Processing
+pymupdf  # PyMuPDF for PDF text extraction (replaces pdf2image for better text extraction)
+
+# LLM Integration
+mistralai  # Mistral API client (inherited from module_a)
+
+# Core utilities
+python-dotenv  # Environment variable management
+requests  # HTTP requests
+
+# API Integration
+fastapi # FastAPI framework
+pydantic  # Data validation
