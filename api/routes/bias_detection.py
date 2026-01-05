@@ -1,4 +1,5 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
+from api.core.deps import get_current_user
 from api.schemas import (
     BiasDetectionRequest,
     BiasDetectionResponse,
@@ -186,7 +187,7 @@ def generate_debiased_sentence(payload: DebiasSentenceRequest) -> DebiasSentence
 
 
 @router.post("/detect-bias", response_model=BiasDetectionResponse)
-async def detect_bias(request: BiasDetectionRequest):
+async def detect_bias(request: BiasDetectionRequest, user: dict = Depends(get_current_user)):
     """Detect bias in Nepali text using a fine-tuned model."""
     try:
         return run_bias_detection(request.text, request.confidence_threshold)
@@ -197,7 +198,7 @@ async def detect_bias(request: BiasDetectionRequest):
 
 
 @router.post("/detect-bias/batch", response_model=BatchBiasDetectionResponse)
-async def detect_bias_batch(request: BatchBiasDetectionRequest):
+async def detect_bias_batch(request: BatchBiasDetectionRequest, user: dict = Depends(get_current_user)):
     """Detect bias for multiple inputs in one request."""
     try:
         if classifier is None:
@@ -233,13 +234,13 @@ async def health_check():
 
 
 @router.post("/debias-sentence", response_model=DebiasSentenceResponse)
-async def debias_sentence(request: DebiasSentenceRequest):
+async def debias_sentence(request: DebiasSentenceRequest, user: dict = Depends(get_current_user)):
     """Suggest a bias-free alternative for a single sentence using Mistral."""
     return generate_debiased_sentence(request)
 
 
 @router.post("/debias-sentence/batch", response_model=DebiasBatchResponse)
-async def debias_sentence_batch(request: DebiasBatchRequest):
+async def debias_sentence_batch(request: DebiasBatchRequest, user: dict = Depends(get_current_user)):
     """Suggest bias-free alternatives for multiple sentences."""
     if not request.items:
         return DebiasBatchResponse(success=False, items=[], error="No items provided")

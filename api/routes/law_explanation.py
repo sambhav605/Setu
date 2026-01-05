@@ -1,4 +1,5 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
+from api.core.deps import get_current_user
 from api.schemas import ExplanationRequest, ExplanationResponse
 from module_a.interface import LawExplanationAPI
 
@@ -6,7 +7,7 @@ router = APIRouter()
 law_api = LawExplanationAPI()
 
 @router.post("/explain", response_model=ExplanationResponse)
-async def explain_law(request: ExplanationRequest):
+async def explain_law(request: ExplanationRequest, user: dict = Depends(get_current_user)):
     try:
         result = law_api.get_explanation(request.query)
         
