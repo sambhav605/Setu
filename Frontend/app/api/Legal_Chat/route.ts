@@ -12,11 +12,16 @@ export async function POST(req: NextRequest) {
 
     const lastMessage = messages[messages.length - 1].content
 
+    // Get Authorization header from incoming request
+    const authHeader = req.headers.get("authorization")
+    const headers: Record<string, string> = { "Content-Type": "application/json" }
+    if (authHeader) {
+      headers["Authorization"] = authHeader
+    }
+
     const response = await fetch(`${BACKEND_URL}/api/v1/explain`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers,
       body: JSON.stringify({
         query: lastMessage,
       }),

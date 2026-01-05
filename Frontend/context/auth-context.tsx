@@ -45,19 +45,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const token = localStorage.getItem("access_token")
-    
+
     if (token) {
       const decoded = decodeToken(token)
-      
+
       if (decoded && decoded.exp * 1000 > Date.now()) {
         // Token is valid, check if we have cached user details
         const cachedDetails = localStorage.getItem("know_rights_user_details")
         const details = cachedDetails ? JSON.parse(cachedDetails) : undefined
-        
+
+        // Try to get stored user data from localStorage
+        const storedUserData = localStorage.getItem("user")
+        let userName = decoded.sub.split("@")[0] // default fallback
+
+        if (storedUserData) {
+          try {
+            const parsedUser = JSON.parse(storedUserData)
+            userName = parsedUser.full_name || parsedUser.name || userName
+          } catch (e) {
+            console.error("Failed to parse user data:", e)
+          }
+        }
+
         setUser({
           id: decoded.sub,
           email: decoded.sub,
-          name: decoded.sub.split("@")[0],
+          name: userName,
           role: "user",
           isFirstTime: !details,
           details,
@@ -68,19 +81,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.removeItem("know_rights_user_details")
       }
     }
-    
+
     setIsLoading(false)
   }, [])
 
   const login = (token: string) => {
     localStorage.setItem("access_token", token)
-    
+
     const decoded = decodeToken(token)
     if (decoded) {
+      // Try to get stored user data from localStorage
+      const storedUserData = localStorage.getItem("user")
+      let userName = decoded.sub.split("@")[0] // default fallback
+
+      console.log("Auth Context - Stored user data:", storedUserData)
+
+      if (storedUserData) {
+        try {
+          const parsedUser = JSON.parse(storedUserData)
+          console.log("Auth Context - Parsed user:", parsedUser)
+          console.log("Auth Context - full_name:", parsedUser.full_name)
+          console.log("Auth Context - name:", parsedUser.name)
+          userName = parsedUser.full_name || parsedUser.name || userName
+          console.log("Auth Context - Final userName:", userName)
+        } catch (e) {
+          console.error("Failed to parse user data:", e)
+        }
+      }
+
       setUser({
         id: decoded.sub,
         email: decoded.sub,
-        name: decoded.sub.split("@")[0],
+        name: userName,
         role: "user",
         isFirstTime: true,
       })

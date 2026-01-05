@@ -4,6 +4,13 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:800
 
 export async function POST(req: NextRequest) {
   try {
+    // Get Authorization header from incoming request
+    const authHeader = req.headers.get("authorization")
+    const headers: Record<string, string> = {}
+    if (authHeader) {
+      headers["Authorization"] = authHeader
+    }
+
     const formData = await req.formData()
     const file = formData.get("file") as File | null
     const text = formData.get("text") as string | null
@@ -21,6 +28,7 @@ export async function POST(req: NextRequest) {
 
       const pdfResponse = await fetch(`${BACKEND_URL}/api/v1/process-pdf`, {
         method: "POST",
+        headers,
         body: pdfFormData,
       })
 
@@ -41,9 +49,10 @@ export async function POST(req: NextRequest) {
 
     // Step 2: Detect bias using batch endpoint
     console.log("Step 2: Detecting bias in sentences...")
+    const biasHeaders = { ...headers, "Content-Type": "application/json" }
     const batchBiasResponse = await fetch(`${BACKEND_URL}/api/v1/detect-bias/batch`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: biasHeaders,
       body: JSON.stringify({
         texts: sentences,
         confidence_threshold: confidenceThreshold,
@@ -108,7 +117,7 @@ export async function POST(req: NextRequest) {
 
       const debiasResponse = await fetch(`${BACKEND_URL}/api/v1/debias-sentence/batch`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: biasHeaders,
         body: JSON.stringify({
           items: debiasItems,
         }),
