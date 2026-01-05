@@ -1,8 +1,32 @@
+"use client"
+
 import { LetterGenerator } from "@/components/chatbot/letter-generator"
 import { Navbar } from "@/components/layout/navbar"
 import { Footer } from "@/components/layout/footer"
+import { useAuthGuard } from "@/hooks/use-auth-guard"
 
 export default function LetterGeneratorPage() {
+  const { isLoading, isAuthenticated } = useAuthGuard()
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <Navbar />
+        <main className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Checking authentication...</p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    )
+  }
+
+  if (!isAuthenticated) {
+    return null // Will redirect to login
+  }
+
   return (
     <>
       {/* Load Nepali fonts for letter generation */}

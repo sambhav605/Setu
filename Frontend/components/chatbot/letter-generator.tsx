@@ -100,9 +100,15 @@ export function LetterGenerator() {
 
   const searchTemplate = async (query: string) => {
     try {
+      const token = localStorage.getItem("access_token")
+      const headers: Record<string, string> = { "Content-Type": "application/json" }
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`
+      }
+
       const response = await fetch("/api/letter-generation", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({
           action: "search-template",
           data: { query },
@@ -134,9 +140,15 @@ export function LetterGenerator() {
 
   const getTemplateDetails = async (templateName: string) => {
     try {
+      const token = localStorage.getItem("access_token")
+      const headers: Record<string, string> = { "Content-Type": "application/json" }
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`
+      }
+
       const response = await fetch("/api/letter-generation", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({
           action: "get-template-details",
           data: { templateName },
@@ -193,9 +205,15 @@ export function LetterGenerator() {
 
   const fillTemplate = async (templateName: string, placeholders: PlaceholderData) => {
     try {
+      const token = localStorage.getItem("access_token")
+      const headers: Record<string, string> = { "Content-Type": "application/json" }
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`
+      }
+
       const response = await fetch("/api/letter-generation", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({
           action: "fill-template",
           data: { templateName, placeholders },

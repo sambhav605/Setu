@@ -10,46 +10,53 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Navbar } from "@/components/layout/navbar"
 import { Footer } from "@/components/layout/footer"
 import Link from "next/link"
-import { Scale, AlertCircle } from "lucide-react" // Added AlertCircle icon
-import { Alert, AlertDescription } from "@/components/ui/alert" // Assuming you use shadcn Alert
+import { Scale, AlertCircle } from "lucide-react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { useAuth } from "@/context/auth-context"
+import { apiClient } from "@/lib/api-client"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [error, setError] = useState<string | null>(null) // State for the error message
+  const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
+  const { login } = useAuth()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError(null) // Clear previous errors
+    setError(null)
     setIsLoading(true)
 
-    const payload = { email, password }
-    console.log(payload)
-    console.log(JSON.stringify(payload))
-
     try {
-      const response = await fetch("http://localhost:8000/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      })
+      // Call backend login endpoint using API client
+      const data = await apiClient.login(email, password)
 
-      const data = await response.json()
-      console.log(data)
+      console.log("Login response:", data)
+      console.log("User data from backend:", data.user)
 
-      if (response.ok) {
-        localStorage.setItem("access_token", data.access_token)
-        router.push("/dashboard")
-      } else {
-        // FastAPI returns error details in the 'detail' key
-        setError(data.detail || "Incorrect email or password")
+      // Store token and user data in localStorage
+      localStorage.setItem("access_token", data.access_token)
+      if (data.user) {
+        localStorage.setItem("user", JSON.stringify(data.user))
+        console.log("Stored user in localStorage:", localStorage.getItem("user"))
       }
+
+      // Update auth context with the new token
+      login(data.access_token)
+
+      // Check for redirect parameter
+      const searchParams = new URLSearchParams(window.location.search)
+      const redirectTo = searchParams.get("redirect")
+
+      // Redirect to the original page or dashboard
+      router.push(redirectTo || "/dashboard")
     } catch (err) {
-      setError("Server connection failed. Please try again later.")
+      if (err instanceof Error) {
+        setError(err.message)
+      } else {
+        setError("Server connection failed. Please try again later.")
+      }
     } finally {
       setIsLoading(false)
     }

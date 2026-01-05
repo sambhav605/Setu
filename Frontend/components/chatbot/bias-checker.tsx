@@ -100,8 +100,15 @@ export function BiasChecker() {
 
       formData.append("confidence_threshold", "0.7")
 
+      const token = localStorage.getItem("access_token")
+      const headers: Record<string, string> = {}
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`
+      }
+
       const response = await fetch("/api/bias-detection", {
         method: "POST",
+        headers,
         body: formData,
       })
 

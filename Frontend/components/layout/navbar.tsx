@@ -1,30 +1,64 @@
 "use client"
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useAuth } from "@/context/auth-context"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Menu, X, Scale, User, LogOut, LayoutDashboard, MessageSquare, Search } from "lucide-react"
+import { Menu, X, Scale, LogOut, LayoutDashboard, MessageSquare, Search } from "lucide-react"
 import { useState } from "react"
+import { clearAuthData } from "@/lib/auth-utils"
 
 export function Navbar() {
   const { user, logout } = useAuth()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const router = useRouter()
 
-  const navItems = [
-    { label: "Home", href: "/" },
-    { label: "Chatbot", href: "/chatbot", icon: MessageSquare },
-    { label: "Bias Checker", href: "/bias-checker", icon: Search },
-    { label: "Letter Generator", href: "/letter-generator" },
-    // { label: "Resources", href: "/resources" },
-  ]
+  const handleLogout = () => {
+    // Clear all auth data from localStorage first
+    clearAuthData()
+    // Update auth context
+    logout()
+    // Force navigation to landing page
+    window.location.href = "/"
+  }
+
+  const handleHomeClick = (e: React.MouseEvent) => {
+    if (user) {
+      e.preventDefault()
+      router.push("/dashboard")
+    }
+  }
+
+  // Define navigation items based on authentication status
+  const getNavItems = () => {
+    if (user) {
+      // Show only protected features when logged in
+      return [
+        { label: "Chatbot", href: "/chatbot", icon: MessageSquare },
+        { label: "Bias Checker", href: "/bias-checker", icon: Search },
+        { label: "Letter Generator", href: "/letter-generator" },
+      ]
+    } else {
+      // Show only Home when not logged in
+      return [
+        { label: "Home", href: "/" },
+      ]
+    }
+  }
+
+  const navItems = getNavItems()
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
         <div className="flex items-center gap-2">
-          <Link href="/" className="flex items-center gap-2 text-primary">
+          <Link
+            href={user ? "/dashboard" : "/"}
+            onClick={handleHomeClick}
+            className="flex items-center gap-2 text-primary"
+          >
             <Scale className="h-6 w-6" />
             <span className="font-bold text-lg tracking-tight">Know Your Rights Nepal</span>
           </Link>
@@ -37,14 +71,15 @@ export function Navbar() {
               {item.label}
             </Link>
           ))}
-          {/* Logic to implement the user signin and signup option */}
-          {/* {user ? (
+
+          {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                  <Avatar className="h-8 w-8 border">
+                <Button variant="ghost" className="relative h-8 w-8 rounded-full focus-visible:ring-0 focus-visible:ring-offset-0 hover:bg-transparent">
+                  <Avatar className="h-8 w-8 border hover:border-primary transition-colors">
                     <AvatarFallback className="bg-primary text-primary-foreground">
-                      {user.name.slice(0, 2).toUpperCase()}
+                      {/* {user?.email ? user.email.slice(0, 2).toUpperCase() : 'U'} */}
+                      {'U'}
                     </AvatarFallback>
                   </Avatar>
                 </Button>
@@ -56,23 +91,22 @@ export function Navbar() {
                     Dashboard
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/profile">
-                    <User className="mr-2 h-4 w-4" />
-                    Profile
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => logout()} className="text-destructive">
+                <DropdownMenuItem onClick={handleLogout} className="text-destructive">
                   <LogOut className="mr-2 h-4 w-4" />
                   Logout
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            // <Button asChild className="bg-primary hover:bg-primary/90">
-            //   <Link href="/login">Login</Link>
-            // </Button>
-          )} */}
+            <div className="flex items-center gap-2">
+              <Button asChild variant="ghost">
+                <Link href="/login">Login</Link>
+              </Button>
+              <Button asChild className="bg-primary hover:bg-primary/90">
+                <Link href="/register">Register</Link>
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Mobile Navigation */}
@@ -96,12 +130,42 @@ export function Navbar() {
                 {item.label}
               </Link>
             ))}
-            {!user && (
-              <Button asChild className="w-full">
-                <Link href="/login" onClick={() => setIsMenuOpen(false)}>
-                  Login
+
+            {user ? (
+              <>
+                <Link
+                  href="/dashboard"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="text-sm font-medium p-2 hover:bg-muted rounded-md flex items-center gap-2"
+                >
+                  <LayoutDashboard className="h-4 w-4" />
+                  Dashboard
                 </Link>
-              </Button>
+                <Button
+                  onClick={() => {
+                    setIsMenuOpen(false)
+                    handleLogout()
+                  }}
+                  variant="destructive"
+                  className="w-full"
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Logout
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button asChild variant="outline" className="w-full">
+                  <Link href="/login" onClick={() => setIsMenuOpen(false)}>
+                    Login
+                  </Link>
+                </Button>
+                <Button asChild className="w-full bg-primary">
+                  <Link href="/register" onClick={() => setIsMenuOpen(false)}>
+                    Register
+                  </Link>
+                </Button>
+              </>
             )}
           </div>
         </div>

@@ -7,6 +7,13 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const { action, data } = body
 
+    // Get Authorization header from incoming request
+    const authHeader = req.headers.get("authorization")
+    const headers: Record<string, string> = { "Content-Type": "application/json" }
+    if (authHeader) {
+      headers["Authorization"] = authHeader
+    }
+
     let response: Response
     let result: any
 
@@ -15,7 +22,7 @@ export async function POST(req: NextRequest) {
         // Step 1: Search for template based on user requirement
         response = await fetch(`${BACKEND_URL}/api/v1/search-template`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers,
           body: JSON.stringify({ query: data.query }),
         })
 
@@ -36,7 +43,7 @@ export async function POST(req: NextRequest) {
         // Step 2: Get placeholder details for the template
         response = await fetch(`${BACKEND_URL}/api/v1/get-template-details`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers,
           body: JSON.stringify({ template_name: data.templateName }),
         })
 
@@ -57,7 +64,7 @@ export async function POST(req: NextRequest) {
         // Step 3: Fill template with provided placeholder values
         response = await fetch(`${BACKEND_URL}/api/v1/fill-template`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers,
           body: JSON.stringify({
             template_name: data.templateName,
             placeholders: data.placeholders,
