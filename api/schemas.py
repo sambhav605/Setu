@@ -223,3 +223,40 @@ class SessionStatusResponse(BaseModel):
     needs_regeneration_count: int
     sentences: List[BiasReviewItem]
     error: Optional[str] = None
+
+# Chat History Schemas
+class ConversationCreate(BaseModel):
+    title: Optional[str] = "New Conversation"
+
+class ConversationUpdate(BaseModel):
+    title: Optional[str] = None
+
+class MessageCreate(BaseModel):
+    role: str
+    content: str
+    metadata: Optional[Dict[str, Any]] = None
+
+class MessageResponse(BaseModel):
+    id: str
+    conversation_id: str
+    role: str
+    content: str
+    timestamp: str
+    metadata: Optional[Dict[str, Any]] = None
+
+class ConversationResponse(BaseModel):
+    id: str
+    user_id: str
+    title: str
+    created_at: str
+    updated_at: str
+    message_count: Optional[int] = None
+
+class ConversationDetailResponse(BaseModel):
+    id: str
+    user_id: str
+    title: str
+    created_at: str
+    updated_at: str
+    messages: List[MessageResponse]
+    message_count: int

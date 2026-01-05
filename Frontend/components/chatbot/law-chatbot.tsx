@@ -11,12 +11,20 @@ import { Send, Scale, User, Download, Plus, MessageSquare } from "lucide-react"
 import { cn } from "@/lib/utils"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
+import { useToast } from "@/hooks/use-toast"
 
 interface Message {
   id: string
   role: "user" | "assistant"
   content: string
   timestamp: Date
+}
+
+interface Conversation {
+  id: string
+  title: string
+  updated_at: string
+  message_count: number
 }
 
 export function LawChatbot() {
@@ -30,7 +38,11 @@ export function LawChatbot() {
   ])
   const [input, setInput] = useState("")
   const [isTyping, setIsTyping] = useState(false)
+  const [conversationId, setConversationId] = useState<string | null>(null)
+  const [conversations, setConversations] = useState<Conversation[]>([])
+  const [isLoadingConversations, setIsLoadingConversations] = useState(false)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
+  const { toast } = useToast()
 
   const suggestedQuestions = [
     "What are my property rights?",
@@ -39,8 +51,14 @@ export function LawChatbot() {
     "Women's rights in Nepal",
   ]
 
+  // Load conversations on mount
   useEffect(() => {
-    // Scroll to bottom whenever messages change
+    loadConversations()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Scroll to bottom whenever messages change
+  useEffect(() => {
     const timer = setTimeout(() => {
       if (scrollAreaRef.current) {
         const scrollContainer = scrollAreaRef.current.querySelector("[data-radix-scroll-area-viewport]")
@@ -54,6 +72,117 @@ export function LawChatbot() {
     }, 100)
     return () => clearTimeout(timer)
   }, [messages, isTyping])
+
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem("access_token")
+    return {
+      "Content-Type": "application/json",
+      ...(token && { Authorization: `Bearer ${token}` }),
+    }
+  }
+
+  const loadConversations = async () => {
+    const token = localStorage.getItem("access_token")
+    if (!token) return
+
+    setIsLoadingConversations(true)
+    try {
+      const response = await fetch("http://localhost:8000/api/v1/conversations", {
+        headers: getAuthHeaders(),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setConversations(data)
+      }
+    } catch (error) {
+      console.error("Failed to load conversations:", error)
+    } finally {
+      setIsLoadingConversations(false)
+    }
+  }
+
+  const loadConversation = async (convId: string) => {
+    try {
+      const response = await fetch(`http://localhost:8000/api/v1/conversations/${convId}`, {
+        headers: getAuthHeaders(),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        const loadedMessages: Message[] = data.messages.map((msg: any) => ({
+          id: msg.id,
+          role: msg.role,
+          content: msg.content,
+          timestamp: new Date(msg.timestamp),
+        }))
+        setMessages(loadedMessages)
+        setConversationId(convId)
+      }
+    } catch (error) {
+      console.error("Failed to load conversation:", error)
+      toast({
+        title: "Error",
+        description: "Failed to load conversation",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const createNewConversation = async (firstMessage: string) => {
+    const token = localStorage.getItem("access_token")
+    if (!token) {
+      toast({
+        title: "Authentication Required",
+        description: "Please login to save chat history",
+        variant: "destructive",
+      })
+      return null
+    }
+
+    try {
+      const title = firstMessage.slice(0, 50) + (firstMessage.length > 50 ? "..." : "")
+      const response = await fetch("http://localhost:8000/api/v1/conversations", {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ title }),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setConversationId(data.id)
+        loadConversations() // Refresh conversation list
+        return data.id
+      }
+    } catch (error) {
+      console.error("Failed to create conversation:", error)
+    }
+    return null
+  }
+
+  const saveMessage = async (convId: string, role: string, content: string) => {
+    try {
+      await fetch(`http://localhost:8000/api/v1/conversations/${convId}/messages`, {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ role, content }),
+      })
+    } catch (error) {
+      console.error("Failed to save message:", error)
+    }
+  }
+
+  const startNewChat = () => {
+    setMessages([
+      {
+        id: "1",
+        role: "assistant",
+        content: "Namaste! I am your Nepali Law Assistant. How can I help you today?",
+        timestamp: new Date(),
+      },
+    ])
+    setConversationId(null)
+  }
 
   const handleSend = async (content: string) => {
     if (!content.trim()) return
@@ -70,6 +199,17 @@ export function LawChatbot() {
     setIsTyping(true)
 
     try {
+      // Create conversation if this is the first message
+      let currentConvId = conversationId
+      if (!currentConvId && localStorage.getItem("access_token")) {
+        currentConvId = await createNewConversation(content)
+      }
+
+      // Save user message to database
+      if (currentConvId) {
+        await saveMessage(currentConvId, "user", content)
+      }
+
       const token = localStorage.getItem("access_token")
       const headers: Record<string, string> = { "Content-Type": "application/json" }
       if (token) {
@@ -94,6 +234,11 @@ export function LawChatbot() {
         timestamp: new Date(),
       }
       setMessages((prev) => [...prev, assistantMsg])
+
+      // Save assistant message to database
+      if (currentConvId) {
+        await saveMessage(currentConvId, "assistant", assistantMsg.content)
+      }
     } catch (error) {
       console.error("[Legal Chat Error]:", error)
       const errorMsg: Message = {
@@ -125,25 +270,40 @@ export function LawChatbot() {
       <div className="flex h-[calc(100vh-10rem)] gap-4">
         {/* Sidebar - Chat History */}
         <div className="hidden lg:flex w-64 flex-col gap-4 border-r pr-4">
-        <Button className="w-full justify-start gap-2 bg-primary" onClick={() => setMessages([messages[0]])}>
+        <Button className="w-full justify-start gap-2 bg-primary" onClick={startNewChat}>
           <Plus className="h-4 w-4" /> New Conversation
         </Button>
         <ScrollArea className="flex-1">
-          {/* <div className="space-y-2">
+          <div className="space-y-2">
             <p className="text-xs font-semibold text-muted-foreground px-2 uppercase tracking-wider">Recent Chats</p>
-            {[1, 2, 3].map((i) => (
-              <button
-                key={i}
-                className="w-full text-left p-3 rounded-lg hover:bg-muted transition-colors border border-transparent hover:border-border group"
-              >
-                <div className="flex items-center gap-2 mb-1">
-                  <MessageSquare className="h-4 w-4 text-primary" />
-                  <span className="text-sm font-medium truncate">Legal Query #{i}</span>
-                </div>
-                <span className="text-xs text-muted-foreground">Yesterday</span>
-              </button>
-            ))}
-          </div> */}
+            {isLoadingConversations ? (
+              <p className="text-xs text-muted-foreground px-2">Loading...</p>
+            ) : conversations.length > 0 ? (
+              conversations.map((conv) => (
+                <button
+                  key={conv.id}
+                  className={cn(
+                    "w-full text-left p-3 rounded-lg hover:bg-muted transition-colors border border-transparent hover:border-border group",
+                    conversationId === conv.id && "bg-muted border-border"
+                  )}
+                  onClick={() => loadConversation(conv.id)}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <MessageSquare className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-medium truncate">{conv.title}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(conv.updated_at).toLocaleDateString()}
+                    </span>
+                    <span className="text-xs text-muted-foreground">{conv.message_count} msgs</span>
+                  </div>
+                </button>
+              ))
+            ) : (
+              <p className="text-xs text-muted-foreground px-2">No conversations yet</p>
+            )}
+          </div>
         </ScrollArea>
       </div>
 

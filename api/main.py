@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from api.routes import law_explanation, letter_generation, bias_detection, pdf_processing, supabase_auth, bias_detection_hitl
+from api.routes import law_explanation, letter_generation, bias_detection, pdf_processing, supabase_auth, bias_detection_hitl, chat_history
 from api.core.config import settings
 
 app = FastAPI(
@@ -25,6 +25,7 @@ app.include_router(letter_generation.router, prefix="/api/v1", tags=["Letter Gen
 app.include_router(bias_detection.router, prefix="/api/v1", tags=["Bias Detection"])
 app.include_router(bias_detection_hitl.router, prefix="/api/v1/bias-detection-hitl", tags=["Bias Detection HITL"])
 app.include_router(pdf_processing.router, prefix="/api/v1", tags=["PDF Processing"])
+app.include_router(chat_history.router, prefix="/api/v1", tags=["Chat History"])
 
 @app.get("/")
 async def root():
