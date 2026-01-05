@@ -1,4 +1,5 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
+from api.core.deps import get_current_user
 from api.schemas import (
     LetterGenerationRequest, LetterGenerationResponse,
     TemplateSearchRequest, TemplateSearchResponse,
@@ -13,7 +14,7 @@ letter_api = LetterGenerationAPI()
 # ... existing endpoints ...
 
 @router.post("/search-template", response_model=TemplateSearchResponse)
-async def search_template(request: TemplateSearchRequest):
+async def search_template(request: TemplateSearchRequest, user: dict = Depends(get_current_user)):
     try:
         result = letter_api.search_template(request.query)
         return result
@@ -21,7 +22,7 @@ async def search_template(request: TemplateSearchRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/get-template-details", response_model=TemplateDetailsResponse)
-async def get_template_details(request: TemplateDetailsRequest):
+async def get_template_details(request: TemplateDetailsRequest, user: dict = Depends(get_current_user)):
     try:
         result = letter_api.get_template_details(request.template_name)
         return result
@@ -29,7 +30,7 @@ async def get_template_details(request: TemplateDetailsRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/fill-template", response_model=TemplateFillResponse)
-async def fill_template(request: TemplateFillRequest):
+async def fill_template(request: TemplateFillRequest, user: dict = Depends(get_current_user)):
     try:
         result = letter_api.fill_template(request.template_name, request.placeholders)
         return result
@@ -37,7 +38,7 @@ async def fill_template(request: TemplateFillRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/generate-letter", response_model=LetterGenerationResponse)
-async def generate_letter(request: LetterGenerationRequest):
+async def generate_letter(request: LetterGenerationRequest, user: dict = Depends(get_current_user)):
     try:
         # Check if we need to analyze or generate
         # For simplicity, we assume the user might want to generate directly

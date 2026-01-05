@@ -3,7 +3,8 @@ PDF Processing Routes
 Handles Nepali PDF uploads and processing for bias detection
 """
 
-from fastapi import APIRouter, HTTPException, UploadFile, File, Form
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Depends
+from api.core.deps import get_current_user
 from api.schemas import (
     PDFProcessingResponse,
     PDFToBiasDetectionRequest,
@@ -25,7 +26,8 @@ pdf_processor = PDFProcessor()
 @router.post("/process-pdf", response_model=PDFProcessingResponse)
 async def process_pdf(
     file: UploadFile = File(...),
-    refine_with_llm: bool = Form(default=True)
+    refine_with_llm: bool = Form(default=True),
+    user: dict = Depends(get_current_user)
 ):
     """
     Upload a Nepali PDF and extract sentences.
@@ -89,7 +91,8 @@ async def process_pdf(
 async def process_pdf_to_bias(
     file: UploadFile = File(...),
     refine_with_llm: bool = Form(default=True),
-    confidence_threshold: float = Form(default=0.7)
+    confidence_threshold: float = Form(default=0.7),
+    user: dict = Depends(get_current_user)
 ):
     """
     Upload a Nepali PDF, extract sentences, and directly analyze for bias.
