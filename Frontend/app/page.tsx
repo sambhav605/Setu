@@ -13,7 +13,7 @@ export default function Home() {
         {/* Hero Section */}
         <section className="relative py-20 md:py-32 overflow-hidden">
           <div className="absolute inset-0 nepali-pattern -z-10" />
-          <div className="container relative text-center space-y-8">
+          <div className="container max-w-7xl mx-auto relative text-center space-y-8">
             {/* <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold mb-4 border border-primary/20">
               <CheckCircle className="h-3 w-3" />
               Trusted by 5,000+ Nepali Citizens
@@ -43,7 +43,7 @@ export default function Home() {
 
         {/* Features Grid */}
         <section className="py-20 bg-muted/30">
-          <div className="container">
+          <div className="container max-w-7xl mx-auto">
             <div className="text-center mb-16 space-y-4">
               <h2 className="text-3xl font-bold tracking-tight">Comprehensive Legal Services</h2>
               <p className="text-muted-foreground max-w-[600px] mx-auto">

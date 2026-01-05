@@ -254,9 +254,10 @@ export function LetterGenerator() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-10rem)] gap-4">
-      {/* Main Chat Interface */}
-      <Card className="flex-1 flex flex-col shadow-lg border-primary/10 overflow-hidden bg-card/50 backdrop-blur-sm">
+    <div className="w-full max-w-[1600px] mx-auto">
+      <div className="flex h-[calc(100vh-10rem)] gap-4">
+        {/* Main Chat Interface */}
+        <Card className="flex-1 flex flex-col shadow-lg border-primary/10 overflow-hidden bg-card/50 backdrop-blur-sm">
         <CardHeader className="border-b py-4 flex flex-row items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
@@ -403,6 +404,7 @@ export function LetterGenerator() {
           </div>
         </CardFooter>
       </Card>
+      </div>
     </div>
   )
 }

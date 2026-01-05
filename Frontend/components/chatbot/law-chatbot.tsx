@@ -115,14 +115,15 @@ export function LawChatbot() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-10rem)] gap-4">
-      {/* Sidebar - Chat History */}
-      <div className="hidden lg:flex w-64 flex-col gap-4 border-r pr-4">
+    <div className="w-full max-w-[1600px] mx-auto">
+      <div className="flex h-[calc(100vh-10rem)] gap-4">
+        {/* Sidebar - Chat History */}
+        <div className="hidden lg:flex w-64 flex-col gap-4 border-r pr-4">
         <Button className="w-full justify-start gap-2 bg-primary" onClick={() => setMessages([messages[0]])}>
           <Plus className="h-4 w-4" /> New Conversation
         </Button>
         <ScrollArea className="flex-1">
-          <div className="space-y-2">
+          {/* <div className="space-y-2">
             <p className="text-xs font-semibold text-muted-foreground px-2 uppercase tracking-wider">Recent Chats</p>
             {[1, 2, 3].map((i) => (
               <button
@@ -136,7 +137,7 @@ export function LawChatbot() {
                 <span className="text-xs text-muted-foreground">Yesterday</span>
               </button>
             ))}
-          </div>
+          </div> */}
         </ScrollArea>
       </div>
 
@@ -297,6 +298,7 @@ export function LawChatbot() {
           </div>
         </CardFooter>
       </Card>
+      </div>
     </div>
   )
 }
