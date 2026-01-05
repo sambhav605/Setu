@@ -9,7 +9,7 @@ import { Footer } from "@/components/layout/footer"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card"
 import { StatsCard } from "@/components/dashboard/stats-card"
-import { MessageSquare, ShieldCheck, Clock, ArrowUpRight, BookOpen, Lightbulb, Bell } from "lucide-react"
+import { MessageSquare, ShieldCheck, Clock, ArrowUpRight, BookOpen, Lightbulb, Bell, FileText } from "lucide-react"
 import Link from "next/link"
 import { redirect } from "next/navigation"
 
@@ -26,6 +26,28 @@ export default function DashboardPage() {
 
   if (!mounted || isLoading) return null
   if (!user) redirect("/login")
+
+  // Calculate profile progress based on name, email, NID, and age
+  const calculateProfileProgress = () => {
+    let completedFields = 0
+    const totalFields = 4
+
+    // Name is always present (required during registration)
+    if (user.name) completedFields++
+
+    // Email is always present (required during registration)
+    if (user.email) completedFields++
+
+    // Check if NID is filled
+    if (user.details?.nid) completedFields++
+
+    // Check if age is filled
+    if (user.details?.age) completedFields++
+
+    return Math.round((completedFields / totalFields) * 100)
+  }
+
+  const profileProgress = calculateProfileProgress()
 
   const activities = [
     {
@@ -97,19 +119,21 @@ export default function DashboardPage() {
               color="accent"
             />
             <StatsCard
-              title="Days Active"
-              value="24"
-              description="Current streak: 4 days"
-              icon={Clock}
+              title="Letters Generated"
+              value="8"
+              description="+3 this month"
+              icon={FileText}
               color="success"
             />
-            <StatsCard
-              title="Profile Progress"
-              value="85%"
-              description="Complete your details"
-              icon={ArrowUpRight}
-              color="primary"
-            />
+            <Link href="/profile" className="block">
+              <StatsCard
+                title="Profile Progress"
+                value={`${profileProgress}%`}
+                description="Complete your details"
+                icon={ArrowUpRight}
+                color="primary"
+              />
+            </Link>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
