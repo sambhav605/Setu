@@ -38,3 +38,7 @@ requests  # HTTP requests
 # API Integration
 fastapi # FastAPI framework
 pydantic  # Data validation
+
+# Testing
+pytest>=7.0.0
+pytest-asyncio>=0.21.0
