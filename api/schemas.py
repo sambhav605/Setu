@@ -13,6 +13,24 @@ class ExplanationResponse(BaseModel):
     sources: List[Dict[str, Any]]
     query: str
 
+# Context-aware chat schema
+class ChatRequest(BaseModel):
+    query: str
+    conversation_id: Optional[str] = None
+
+class ChatResponse(BaseModel):
+    summary: str
+    key_point: str
+    explanation: str
+    next_steps: str
+    sources: List[Dict[str, Any]]
+    query: str
+    context_used: Optional[bool] = False
+    is_non_legal: Optional[bool] = False
+    original_query: Optional[str] = None
+    summarized_query: Optional[str] = None
+    suggested_action: Optional[Dict[str, str]] = None
+
 # Module C Schemas
 class LetterGenerationRequest(BaseModel):
     description: str
