@@ -74,6 +74,7 @@ async def signup(request: SignUpRequest):
                 "user": {
                     "id": response.user.id,
                     "email": response.user.email,
+                    "full_name": response.user.user_metadata.get("full_name", ""),
                     "created_at": str(response.user.created_at),
                 },
             }
@@ -110,6 +111,7 @@ async def login(request: LoginRequest):
                 "user": {
                     "id": response.user.id,
                     "email": response.user.email,
+                    "full_name":response.user.user_metadata.get("full_name", ""),
                 },
             }
         else:
