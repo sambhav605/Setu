@@ -30,7 +30,9 @@ export async function POST(req: NextRequest) {
     })
 
     if (!response.ok) {
-      throw new Error(`Backend API returned ${response.status}`)
+      const errorText = await response.text().catch(() => "No error details")
+      console.error(`[Legal Chat] Backend error (${response.status}):`, errorText)
+      throw new Error(`Backend API returned ${response.status}: ${errorText}`)
     }
 
     const data = await response.json()
@@ -90,7 +92,10 @@ ${data.next_steps}${sourcesText}${contextBadge}`.trim()
   } catch (error) {
     console.error("[Legal Chat API Error]:", error)
     return NextResponse.json(
-      { error: "Failed to fetch response from legal AI backend. Please ensure the backend server is running." },
+      {
+        error: error instanceof Error ? error.message : "Failed to fetch response from legal AI backend.",
+        details: "Please ensure NEXT_PUBLIC_BACKEND_URL is set correctly and the backend is running."
+      },
       { status: 500 }
     )
   }
