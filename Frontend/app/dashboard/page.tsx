@@ -9,9 +9,10 @@ import { Footer } from "@/components/layout/footer"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card"
 import { StatsCard } from "@/components/dashboard/stats-card"
-import { MessageSquare, ShieldCheck, Clock, ArrowUpRight, BookOpen, Lightbulb, Bell } from "lucide-react"
+import { MessageSquare, ShieldCheck, Clock, ArrowUpRight, BookOpen, Lightbulb, Bell, FileText } from "lucide-react"
 import Link from "next/link"
 import { redirect } from "next/navigation"
+import { getDocumentStats } from "@/lib/document-cache"
 
 export default function DashboardPage() {
   const { user, isLoading } = useAuth()
@@ -24,38 +25,122 @@ export default function DashboardPage() {
     console.log("Token in localStorage:", localStorage.getItem('access_token'));
   }, [isLoading, user])
 
+  const [tips, setTips] = useState<any[]>([])
+  const [currentTipIndex, setCurrentTipIndex] = useState<number>(0)
+  const [showNepali, setShowNepali] = useState<boolean>(false)
+  const [totalConsultations, setTotalConsultations] = useState<number>(0)
+  const [recentActivities, setRecentActivities] = useState<any[]>([])
+  const [documentStats, setDocumentStats] = useState({
+    totalAnalyzed: 0,
+    totalInclusive: 0,
+    totalFlagged: 0,
+    totalLetters: 0,
+  })
+
+  useEffect(() => {
+    fetch("/data.json")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setTips(data)
+          setCurrentTipIndex(Math.floor(Math.random() * data.length))
+        }
+      })
+      .catch((err) => console.error("Failed to load tips:", err))
+
+    // Load document stats from cache
+    const stats = getDocumentStats()
+    setDocumentStats(stats)
+  }, [])
+
+  // Fetch total consultations count and recent activities
+  useEffect(() => {
+    const fetchConsultations = async () => {
+      const token = localStorage.getItem("access_token")
+      if (!token) return
+
+      const BACKEND_URL = (process.env.NEXT_PUBLIC_BACKEND_URL as string) || "http://localhost:8000"
+
+      try {
+        const response = await fetch(`${BACKEND_URL}/api/v1/chat-history/conversations`, {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          setTotalConsultations(data.length)
+
+          // Transform conversations into activity format
+          const activities = data.slice(0, 5).map((conv: any) => ({
+            type: "chat",
+            title: conv.title,
+            time: formatRelativeTime(conv.updated_at),
+            icon: MessageSquare,
+            color: "text-primary bg-primary/10",
+            conversationId: conv.id,
+          }))
+          setRecentActivities(activities)
+        }
+      } catch (error) {
+        console.error("Failed to fetch consultations:", error)
+      }
+    }
+
+    if (user) {
+      fetchConsultations()
+    }
+  }, [user])
+
+  // Helper function to format relative time
+  const formatRelativeTime = (dateString: string) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMs / 3600000)
+    const diffDays = Math.floor(diffMs / 86400000)
+
+    if (diffMins < 60) {
+      return diffMins <= 1 ? "Just now" : `${diffMins} minutes ago`
+    } else if (diffHours < 24) {
+      return diffHours === 1 ? "1 hour ago" : `${diffHours} hours ago`
+    } else if (diffDays === 1) {
+      return "Yesterday"
+    } else if (diffDays < 7) {
+      return `${diffDays} days ago`
+    } else {
+      return date.toLocaleDateString()
+    }
+  }
+
   if (!mounted || isLoading) return null
   if (!user) redirect("/login")
 
-  const activities = [
-    {
-      type: "chat",
-      title: "Legal Consultation #104",
-      time: "2 hours ago",
-      icon: MessageSquare,
-      color: "text-primary bg-primary/10",
-    },
-    {
-      type: "bias",
-      title: "Document Analysis: Labor Contract",
-      time: "Yesterday",
-      icon: ShieldCheck,
-      color: "text-accent bg-accent/10",
-    },
-    {
-      type: "resource",
-      title: "Read: Consumer Protection Rights",
-      time: "2 days ago",
-      icon: BookOpen,
-      color: "text-success bg-success/10",
-    },
-  ]
+  // Calculate profile progress based on name, email, NID, and age
+  const calculateProfileProgress = () => {
+    let completedFields = 0
+    const totalFields = 4
 
-  const tips = [
-    "Always keep a signed copy of any legal notice you receive.",
-    "Property rights in Nepal are protected under the 2072 Constitution.",
-    "Labor laws require a 30-day notice for contract termination.",
-  ]
+    // Name is always present (required during registration)
+    if (user.name) completedFields++
+
+    // Email is always present (required during registration)
+    if (user.email) completedFields++
+
+    // Check if NID is filled
+    if (user.details?.nid) completedFields++
+
+    // Check if age is filled
+    if (user.details?.age) completedFields++
+
+    return Math.round((completedFields / totalFields) * 100)
+  }
+
+  const profileProgress = calculateProfileProgress()
+
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -65,8 +150,7 @@ export default function DashboardPage() {
           {/* Header */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
             <div className="space-y-1">
-              {/*<h1 className="text-3xl font-bold tracking-tight">Welcome back, {user.name}</h1>*/}
-              <h1 className="text-3xl font-bold tracking-tight">Welcome back, </h1>
+              <h1 className="text-3xl font-bold tracking-tight">Welcome back, {user.name}</h1>
               <p className="text-muted-foreground">Here&apos;s an overview of your legal welfare activity.</p>
             </div>
             <div className="flex items-center gap-3">
@@ -84,32 +168,34 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <StatsCard
               title="Total Consultations"
-              value="12"
-              description="+2 from last month"
+              value={totalConsultations.toString()}
+              description={`${totalConsultations} chat ${totalConsultations === 1 ? 'history' : 'histories'}`}
               icon={MessageSquare}
               color="primary"
             />
             <StatsCard
               title="Documents Analyzed"
-              value="5"
-              description="3 inclusive, 2 flagged"
+              value={documentStats.totalAnalyzed.toString()}
+              description={`${documentStats.totalInclusive} inclusive, ${documentStats.totalFlagged} flagged`}
               icon={ShieldCheck}
               color="accent"
             />
             <StatsCard
-              title="Days Active"
-              value="24"
-              description="Current streak: 4 days"
-              icon={Clock}
+              title="Letters Generated"
+              value={documentStats.totalLetters.toString()}
+              description="Cached locally"
+              icon={FileText}
               color="success"
             />
-            <StatsCard
-              title="Profile Progress"
-              value="85%"
-              description="Complete your details"
-              icon={ArrowUpRight}
-              color="primary"
-            />
+            <Link href="/profile" className="block">
+              <StatsCard
+                title="Profile Progress"
+                value={`${profileProgress}%`}
+                description="Complete your details"
+                icon={ArrowUpRight}
+                color="primary"
+              />
+            </Link>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -126,18 +212,28 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-6">
-                  {activities.map((activity, i) => (
-                    <div key={i} className="flex items-start gap-4 group cursor-pointer">
-                      <div className={cn("p-2 rounded-lg border border-transparent transition-colors", activity.color)}>
-                        <activity.icon className="h-5 w-5" />
-                      </div>
-                      <div className="flex-1 space-y-1">
-                        <p className="text-sm font-bold group-hover:text-primary transition-colors">{activity.title}</p>
-                        <p className="text-xs text-muted-foreground">{activity.time}</p>
-                      </div>
-                      <ArrowUpRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                  {recentActivities.length > 0 ? (
+                    recentActivities.map((activity, i) => (
+                      <Link key={i} href="/chatbot">
+                        <div className="flex items-start gap-4 group cursor-pointer">
+                          <div className={cn("p-2 rounded-lg border border-transparent transition-colors", activity.color)}>
+                            <activity.icon className="h-5 w-5" />
+                          </div>
+                          <div className="flex-1 space-y-1">
+                            <p className="text-sm font-bold group-hover:text-primary transition-colors">{activity.title}</p>
+                            <p className="text-xs text-muted-foreground">{activity.time}</p>
+                          </div>
+                          <ArrowUpRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </div>
+                      </Link>
+                    ))
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <MessageSquare className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                      <p className="text-sm">No recent activity yet</p>
+                      <p className="text-xs mt-1">Start a conversation with our legal chatbot</p>
                     </div>
-                  ))}
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -153,10 +249,42 @@ export default function DashboardPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="relative">
-                  <p className="text-sm leading-relaxed opacity-90">{tips[0]}</p>
-                  <Button variant="secondary" size="sm" className="mt-4 w-full">
-                    View More Tips
-                  </Button>
+                  <p className="text-sm leading-relaxed opacity-90">
+                    {tips.length > 0 ? (showNepali ? tips[currentTipIndex]?.fact_np : tips[currentTipIndex]?.fact_en) : "Loading tip..."}
+                  </p>
+
+                  <div className="mt-4 w-full flex gap-3 items-center">
+                    <Button
+                      variant="ghost"
+                      size="lg"
+                      className="flex-1 bg-white/10 hover:bg-white/20 text-white/95 rounded-lg px-4 py-2 flex items-center gap-3 justify-center shadow-md"
+                      onClick={() => {
+                        // pick a new random tip (keep current language)
+                        if (tips.length > 1) {
+                          let idx = Math.floor(Math.random() * tips.length)
+                          if (tips.length > 1 && idx === currentTipIndex) idx = (idx + 1) % tips.length
+                          setCurrentTipIndex(idx)
+                        }
+                      }}
+                      title={showNepali ? "नेपालीमा" : "View more tips"}
+                    >
+                      <Lightbulb className="h-4 w-4 text-accent" />
+                      <span className="font-medium">
+                        {showNepali ? "थप सुझावहरू" : "View More Tips"}
+                      </span>
+                    </Button>
+
+                    <Button
+                      variant="default"
+                      size="sm"
+                      className="rounded-full w-12 h-12 flex items-center justify-center shadow ring-1 ring-white/10 hover:scale-105 transition-transform"
+                      onClick={() => setShowNepali((s) => !s)}
+                      aria-label={showNepali ? "Switch to English" : "नेपालीमा हेर्नुहोस्"}
+                      title={showNepali ? "Show in English" : "नेपालीमा हेर्नुहोस्"}
+                    >
+                      <span className="text-lg">{showNepali ? "EN" : "🇳🇵"}</span>
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
 

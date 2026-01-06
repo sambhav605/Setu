@@ -6,7 +6,7 @@ import { useAuth } from "@/context/auth-context"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Menu, X, Scale, LogOut, LayoutDashboard, MessageSquare, Search } from "lucide-react"
+import { Menu, X, Scale, LogOut, LayoutDashboard, MessageSquare, Search, User } from "lucide-react"
 import { useState } from "react"
 import { clearAuthData } from "@/lib/auth-utils"
 
@@ -78,17 +78,26 @@ export function Navbar() {
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full focus-visible:ring-0 focus-visible:ring-offset-0 hover:bg-transparent">
                   <Avatar className="h-8 w-8 border hover:border-primary transition-colors">
                     <AvatarFallback className="bg-primary text-primary-foreground">
-                      {/* {user?.email ? user.email.slice(0, 2).toUpperCase() : 'U'} */}
-                      {'U'}
+                      {user?.name ? user.name.slice(0, 2).toUpperCase() : 'U'}
                     </AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
+                <div className="px-4 py-3 border-b">
+                  <div className="font-medium">{user?.name}</div>
+                  <div className="text-xs text-muted-foreground">{user?.email}</div>
+                </div>
                 <DropdownMenuItem asChild>
                   <Link href="/dashboard">
                     <LayoutDashboard className="mr-2 h-4 w-4" />
                     Dashboard
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/profile">
+                    <User className="mr-2 h-4 w-4" />
+                    Profile
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleLogout} className="text-destructive">
@@ -140,6 +149,14 @@ export function Navbar() {
                 >
                   <LayoutDashboard className="h-4 w-4" />
                   Dashboard
+                </Link>
+                <Link
+                  href="/profile"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="text-sm font-medium p-2 hover:bg-muted rounded-md flex items-center gap-2"
+                >
+                  <User className="h-4 w-4" />
+                  Profile
                 </Link>
                 <Button
                   onClick={() => {
