@@ -22,7 +22,8 @@ class HITLSessionManager:
         self,
         filename: str,
         sentences: list,
-        raw_text: str
+        raw_text: str,
+        original_pdf_bytes: Optional[bytes] = None
     ) -> BiasReviewSession:
         """
         Create a new review session.
@@ -31,6 +32,7 @@ class HITLSessionManager:
             filename: Original PDF filename
             sentences: List of BiasReviewItem objects
             raw_text: Raw extracted text from PDF
+            original_pdf_bytes: Original PDF file as bytes (for PDF regeneration)
 
         Returns:
             BiasReviewSession object with generated session_id
@@ -42,6 +44,7 @@ class HITLSessionManager:
             original_filename=filename,
             sentences=sentences,
             raw_text=raw_text,
+            original_pdf_bytes=original_pdf_bytes,
             created_at=datetime.utcnow().isoformat(),
             status="pending_review"
         )

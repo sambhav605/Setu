@@ -185,6 +185,7 @@ class BiasReviewSession(BaseModel):
     original_filename: str
     sentences: List[BiasReviewItem]
     raw_text: str
+    original_pdf_bytes: Optional[bytes] = None
     created_at: str
     status: str = "pending_review"  # "pending_review", "in_progress", "completed"
 
