@@ -26,6 +26,7 @@ Backend/.env
 .env
 .env.*
 !.env.example
+!.env.*.example
 
 # ===============================
 # FastAPI / ASGI
@@ -93,3 +94,10 @@ docker-compose.override.yml
 **/.env
 **/.env.*
 !**/.env.example
+!**/.env.*.example
+
+# ===============================
+# Data & Vector DBs
+# ===============================
+**/vector_db/
+**/chunks/

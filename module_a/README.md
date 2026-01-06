@@ -1,180 +1,345 @@
-# Module A: Law Explanation (RAG Pipeline)
+# Setu 🇳🇵
 
-## Overview
+**An AI-powered platform for legal assistance in Nepal** - making legal documents accessible, generating official letters, and detecting bias in legal text.
 
-Module A implements the Law Explanation feature for the **Nepal Justice Weaver** platform using Retrieval-Augmented Generation (RAG). This module processes legal documents from Nepal and prepares them for intelligent question-answering.
+## 🎯 Project Overview
 
-## Current Status: Step 2 Complete ✓
+Setu is a comprehensive legal assistance platform that leverages AI/ML to help Nepali citizens interact with legal documents and government processes. The system consists of three main modules integrated with a modern web interface.
 
-**Step 2: Extract and Chunk Text** has been implemented with a modular architecture.
+## 🎥 Demo Video
 
-## Architecture
+Watch the platform in action: [View Demo Video](https://drive.google.com/file/d/12j2J-_g7SHdcQTwU3hQU_uiWldB2RFUz/view?usp=drive_link)
 
-```
-module_a/
-├── __init__.py           # Package initialization
-├── config.py             # Central configuration
-├── models.py             # Data models (DocumentChunk, ChunkMetadata)
-├── extractors.py         # PDF text extraction
-├── cleaners.py           # Text cleaning and normalization
-├── chunkers.py           # Intelligent text chunking
-├── storage.py            # Data persistence
-├── process_documents.py  # Main pipeline orchestration
-└── requirements.txt      # Python dependencies
-```
+## 🚀 Features
 
-## Installation
+### Module A: Law Explanation (RAG-Based Chatbot)
+- **Intelligent Q&A**: Ask questions about Nepali laws in natural language (English/Nepali)
+- **Retrieval-Augmented Generation**: Retrieves relevant legal text and generates accurate explanations
+- **Source References**: Provides exact article/section references
+- **Vector Database**: ChromaDB with semantic search capabilities
 
+### Module B: Multi-Category Bias Detection
+- **10+ Bias Categories**: Detects gender, caste, religion, age, disability, appearance, social status, political, and ambiguity biases
+- **Fine-tuned DistilBERT**: Custom model trained on Nepali legal texts
+- **Sentence Analysis**: Analyzes individual sentences or batch processing
+- **Debiasing Suggestions**: Provides bias-free alternatives for detected biases
+- **Confidence Scoring**: Returns confidence scores for each detection
+
+### Module C: Letter Generation
+- **Template-Based Generation**: RAG-based intelligent template selection
+- **Natural Language Input**: Describe your need, get the right letter
+- **Smart Field Extraction**: Automatically extracts name, date, district, etc.
+- **Official Formats**: Generates proper Nepali government letter formats
+
+### Utility: PDF Processing
+- **Text Extraction**: Extract text from legal PDFs (English & Nepali)
+- **Multi-method Support**: PyMuPDF, pdfplumber with intelligent fallback
+- **OCR Ready**: Handles scanned documents
+- **Integrated Pipeline**: Direct integration with bias detection
+
+## 🛠️ Tech Stack
+
+**Backend:**
+- FastAPI (Python) - RESTful API
+- ChromaDB - Vector database for embeddings
+- Mistral AI - LLM for generation
+- Sentence Transformers - Embeddings
+- PyMuPDF, PDFPlumber - PDF processing
+
+**Frontend:**
+- Next.js 16 - React framework
+- TypeScript - Type safety
+- Tailwind CSS - Styling
+- Radix UI - Component library
+- shadcn/ui - UI components
+
+**ML/AI:**
+- Hugging Face Transformers
+- Sentence Transformers
+- Custom fine-tuned models (Module B)
+
+## 📋 Prerequisites
+
+- **Python**: 3.9+ (recommended: 3.13)
+- **Node.js**: 18+ with pnpm
+- **API Keys**: Mistral AI API key
+- **System**: Linux/macOS/Windows
+
+## ⚙️ Installation
+
+### 1. Clone the Repository
 ```bash
-cd module_a
+git clone https://github.com/KhagendraN/Setu.git
+cd Setu
+```
+
+### 2. Backend Setup
+
+Create a virtual environment:
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
+
+Install dependencies:
+```bash
 pip install -r requirements.txt
 ```
 
-## Usage
-
-### Process All Documents
-
+Create `.env` file in the project root:
 ```bash
-python -m module_a.process_documents
+MISTRAL_API_KEY=your_mistral_api_key_here
 ```
 
-### 2. Build Vector Database (Step 3)
-Creates embeddings and builds ChromaDB index.
+### 3. Build Vector Databases
+
+**Module A (Law Explanation):**
 ```bash
+# Place your legal PDFs in data/module-A/law/
+python -m module_a.process_documents
 python -m module_a.build_vector_db
 ```
 
-### 3. Run RAG Chain (Step 4)
-Ask questions to the legal assistant.
+**Module C (Letter Generation):**
+```bash
+# Templates are already in data/module-C/
+python -m module_c.indexer
+```
+
+### 4. Frontend Setup
+```bash
+cd Frontend
+pnpm install
+cd ..
+```
+
+## 🚀 Running the Application
+
+You need **TWO terminals** to run the full application:
+
+### Terminal 1: Backend API
+```bash
+# Activate virtual environment
+source venv/bin/activate
+
+# Start the API server
+uvicorn api.main:app --reload --port 8000
+```
+
+Backend will run at: `http://localhost:8000`
+API docs available at: `http://localhost:8000/docs`
+
+### Terminal 2: Frontend
+```bash
+cd Frontend
+pnpm dev
+```
+
+Frontend will run at: `http://localhost:3000`
+
+## 🐳 Docker Usage (Recommended)
+
+The easiest way to run the entire platform is using Docker Compose.
+
+### 1. Prerequisites
+- Docker and Docker Compose installed
+- `.env` file with `MISTRAL_API_KEY` in the root directory
+
+### 2. Run with Docker Compose
+```bash
+docker-compose up --build
+```
+
+This will:
+- Build and start the Backend API (port 8000)
+- Build and start the Frontend (port 3000)
+- Automatically run the vector database build scripts
+
+The application will be available at `http://localhost:3000`.
+
+## 📁 Project Structure
+
+```
+Setu/
+├── api/                          # Main API endpoints
+│   ├── main.py                   # FastAPI application
+│   ├── routes/
+│   │   ├── law_explanation.py    # Module A endpoints
+│   │   ├── letter_generation.py  # Module C endpoints
+│   │   ├── bias_detection.py     # Module B endpoints
+│   │   └── pdf_processing.py     # PDF utility endpoints
+│   └── schemas.py                # Pydantic models
+│
+├── module_a/                     # Law Explanation (RAG)
+│   ├── rag_chain.py             # RAG pipeline
+│   ├── vector_db.py             # ChromaDB interface
+│   ├── process_documents.py     # Document processing
+│   └── README.md
+│
+├── module_b/                     # Bias Detection
+│   ├── inference.py             # Model inference
+│   ├── fine_tuning/             # Training scripts
+│   └── dataset/                 # Training data
+│
+├── module_c/                     # Letter Generation
+│   ├── interface.py             # Main API
+│   ├── retriever.py             # Template retrieval
+│   ├── generator.py             # Letter generation
+│   ├── indexer.py               # Vector DB indexing
+│   └── README.md
+│
+├── utility/                      # PDF Processing
+│   ├── pdf_processor.py         # PDF extraction
+│   └── README.md
+│
+├── Frontend/                     # Next.js application
+│   ├── app/
+│   │   ├── chatbot/             # Module A UI
+│   │   ├── letter-generator/    # Module C UI
+│   │   ├── bias-checker/        # Module B UI
+│   │   ├── dashboard/           # Main dashboard
+│   │   └── login/               # Authentication pages
+│   └── components/              # Reusable components
+│
+└── data/                        # Data storage
+    ├── module-A/                # Law documents & vector DB
+    ├── module-C/                # Letter templates & vector DB
+    └── module-B/                # Bias detection datasets
+```
+
+## 🔌 API Endpoints
+
+### Authentication
+- `POST /api/v1/signup` - Register a new user
+- `POST /api/v1/login` - User login
+- `GET /api/v1/me` - Get current user profile
+- `POST /api/v1/refresh` - Refresh access token
+
+### Law Explanation (Module A)
+- `POST /api/v1/law-explanation/explain` - Ask legal questions (basic)
+- `POST /api/v1/law-explanation/chat` - Context-aware chat with conversation history
+- `GET /api/v1/law-explanation/sources` - Get source documents only
+
+### Chat History
+- `POST /api/v1/chat-history/conversations` - Create a new conversation
+- `GET /api/v1/chat-history/conversations` - List all user conversations
+- `GET /api/v1/chat-history/conversations/{id}` - Get specific conversation with messages
+- `DELETE /api/v1/chat-history/conversations/{id}` - Delete a conversation
+- `POST /api/v1/chat-history/messages` - Save a message to conversation
+
+### Letter Generation (Module C)
+- `POST /api/v1/search-template` - Search for letter templates
+- `POST /api/v1/get-template-details` - Get template requirements
+- `POST /api/v1/fill-template` - Fill template with user data
+- `POST /api/v1/generate-letter` - Generate complete letter (smart generation)
+- `POST /api/v1/analyze-requirements` - Analyze missing fields in template
+
+### Bias Detection (Module B)
+- `POST /api/v1/detect-bias` - Detect bias in text
+- `POST /api/v1/detect-bias/batch` - Batch bias detection
+- `POST /api/v1/debias-sentence` - Get debiased alternatives
+- `POST /api/v1/debias-sentence/batch` - Batch debiasing
+- `GET /api/v1/health` - Health check
+
+### Bias Detection HITL (Human-in-the-Loop)
+- `POST /api/v1/bias-detection-hitl/detect` - Detect bias with HITL workflow
+- `POST /api/v1/bias-detection-hitl/approve` - Approve bias detection results
+- `POST /api/v1/bias-detection-hitl/regenerate` - Regenerate debiased suggestions
+- `POST /api/v1/bias-detection-hitl/generate-pdf` - Generate PDF report
+
+### PDF Processing (Utility)
+- `POST /api/v1/process-pdf` - Extract text from PDF
+- `POST /api/v1/process-pdf-to-bias` - Extract PDF and detect bias
+- `GET /api/v1/pdf-health` - Health check
+
+### System
+- `GET /` - API welcome message
+- `GET /health` - System health check
+
+Full API documentation: `http://localhost:8000/docs` (when server is running)
+
+## 🎨 Frontend Features
+
+- **Dashboard**: Overview of all modules
+- **Chatbot**: Interactive law explanation interface
+- **Letter Generator**: Step-by-step letter creation wizard
+- **Bias Checker**: Upload documents or paste text for analysis
+- **User Profile**: User account management
+- **Responsive Design**: Works on desktop and mobile
+
+## 🧪 Testing
+
+### Test Module A (Law Explanation)
 ```bash
 python -m module_a.test_rag
 ```
 
-This will:
-1. Extract text from all PDFs in `data/module-A/law/`
-2. Clean and normalize the text
-3. Split into intelligent chunks (300-600 words)
-4. Save to `data/module-A/chunks/processed_chunks.json`
-
-### Output Files
-
-- `data/module-A/chunks/processed_chunks.json` - All chunks with metadata
-- `data/module-A/chunks/chunks_summary.txt` - Human-readable summary
-
-## Features
-
-### PDF Extraction
-- Supports multiple extraction methods (pdfplumber, PyPDF2)
-- Automatic fallback if primary method fails
-- Page-level extraction with metadata
-
-### Text Cleaning
-- Removes headers, footers, page numbers
-- Fixes line breaks and formatting issues
-- Normalizes unicode characters
-- Removes table of contents patterns
-
-### Intelligent Chunking
-- **Section/Article Detection**: Automatically detects "Article 11", "Section 8", etc.
-- **Context-Aware Splitting**: Breaks at sentence boundaries
-- **Metadata Preservation**: Tracks source file, article/section, word count
-- **Configurable Size**: 300-600 words per chunk (configurable)
-- **Overlap Support**: Maintains context between chunks
-
-## Module Components
-
-### `config.py`
-Central configuration for paths, chunking parameters, and cleaning patterns.
-
-### `models.py`
-Data structures:
-- `DocumentChunk`: Represents a text chunk with metadata
-- `ChunkMetadata`: Source file, article/section, page numbers, word count
-- `ProcessingStats`: Processing statistics
-
-### `extractors.py`
-`PDFExtractor` class for extracting text from PDFs with multiple methods and fallback support.
-
-### `cleaners.py`
-`TextCleaner` class for comprehensive text cleaning and normalization.
-
-### `chunkers.py`
-`LegalDocumentChunker` class for intelligent, section-aware chunking.
-
-### `storage.py`
-`ChunkStorage` class for saving/loading chunks with validation.
-
-### `process_documents.py`
-`DocumentProcessor` class that orchestrates the entire pipeline.
-
-## Next Steps (Step 3)
-
-The chunks are now ready for:
-1. Embedding generation using sentence-transformers
-2. Vector database creation (ChromaDB)
-3. Retrieval testing
-
-## Example Output
-
-```json
-{
-  "metadata": {
-    "total_chunks": 127,
-    "version": "1.0"
-  },
-  "chunks": [
-    {
-      "chunk_id": "Constitution-of-Nepal_2072_Eng_chunk_0001",
-      "text": "Article 11: Citizenship...",
-      "metadata": {
-        "source_file": "Constitution-of-Nepal_2072_Eng.pdf",
-        "article_section": "Article 11",
-        "word_count": 456,
-        "char_count": 2834
-      }
-    }
-  ]
-}
+### Test Module C (Letter Generation)
+```bash
+python -m module_c.test_generation
+python -m module_c.test_interactive
 ```
 
-## Configuration
-
-Edit `config.py` to customize:
-- Chunk size (min/max/target words)
-- Overlap between chunks
-- Cleaning patterns
-- PDF extraction method
-
-## Troubleshooting
-
-**No text extracted**: Some PDFs may be scanned images. Use OCR preprocessing if needed.
-
-**Chunks too large/small**: Adjust `CHUNK_SIZE_*` parameters in `config.py`.
-
-**Missing sections**: Check `SECTION_PATTERNS` in `config.py` for your document format.
-
-## Integration
-
-Module A is packaged as a clean Python API for easy integration into other modules (e.g., Backend, UI).
-
-### Using the API
-
-```python
-from module_a import LawExplanationAPI
-
-# Initialize (loads models once)
-legal_api = LawExplanationAPI()
-
-# Get structured explanation
-response = legal_api.get_explanation("How to get citizenship?")
-
-print(response['summary'])
-print(response['key_point'])
-print(response['explanation'])
-print(response['next_steps'])
-
-# Get sources only (no LLM)
-sources = legal_api.get_sources_only("cyber crime")
+### Test PDF Processing
+```bash
+python -m utility.test_pdf_processor
 ```
 
-See `module_a/integration_example.py` for a complete demo.
+### Test API Endpoints
+```bash
+python -m api.test_api
+```
+
+## 📝 Configuration
+
+### Environment Variables (.env)
+```bash
+# Required
+MISTRAL_API_KEY=your_api_key_here
+
+# Optional - MongoDB (if using Auth Backend)
+# MONGODB_URL=mongodb://localhost:27017
+# SECRET_KEY=your_secret_key
+```
+
+### Module Configurations
+- **Module A**: [module_a/config.py](module_a/config.py)
+- **Module C**: [module_c/config.py](module_c/config.py)
+
+## 🐛 Troubleshooting
+
+### Backend Issues
+- **Import errors**: Make sure virtual environment is activated
+- **Vector DB empty**: Run the build scripts for modules A & C
+- **API key errors**: Check `.env` file has valid `MISTRAL_API_KEY`
+
+### Frontend Issues
+- **Port 3000 in use**: Change port with `pnpm dev -- -p 3001`
+- **Module not found**: Run `pnpm install` in Frontend directory
+- **API connection failed**: Ensure backend is running on port 8000
+
+### Common Errors
+```bash
+# Reinstall dependencies
+pip install --upgrade -r requirements.txt
+
+# Rebuild vector databases
+python -m module_a.build_vector_db
+python -m module_c.indexer
+
+# Clear pnpm cache
+cd Frontend
+pnpm store prune
+pnpm install
+```
+
+## 📚 Documentation
+
+- [Module A Documentation](module_a/README.md) - Law Explanation RAG Pipeline
+- [Module C Documentation](module_c/README.md) - Letter Generation
+- [PDF Processing Guide](utility/README.md) - PDF text extraction
+- [Implementation Guides](docs/) - Detailed implementation workflows
+
+---
+
+> This project is under development as part of a hackathon.

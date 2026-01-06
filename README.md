@@ -1,3 +1,12 @@
+---
+title: Setu
+emoji: 🇳🇵
+colorFrom: blue
+colorTo: red
+sdk: docker
+app_port: 7860
+---
+
 # Setu 🇳🇵
 
 **An AI-powered platform for legal assistance in Nepal** - making legal documents accessible, generating official letters, and detecting bias in legal text.
