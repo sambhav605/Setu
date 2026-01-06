@@ -1,23 +1,32 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { Send, Scale, User, Download, Plus, MessageSquare } from "lucide-react"
+import { Send, Scale, User, Download, Plus, MessageSquare, Trash2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import { useToast } from "@/hooks/use-toast"
+
+interface SuggestedAction {
+  action: string
+  description: string
+  letter_type: string
+  prompt: string
+}
 
 interface Message {
   id: string
   role: "user" | "assistant"
   content: string
   timestamp: Date
+  suggested_action?: SuggestedAction
 }
 
 interface Conversation {
@@ -28,6 +37,7 @@ interface Conversation {
 }
 
 export function LawChatbot() {
+  const router = useRouter()
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
@@ -41,6 +51,8 @@ export function LawChatbot() {
   const [conversationId, setConversationId] = useState<string | null>(null)
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [isLoadingConversations, setIsLoadingConversations] = useState(false)
+  const [showLetterDialog, setShowLetterDialog] = useState(false)
+  const [pendingAction, setPendingAction] = useState<SuggestedAction | null>(null)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const { toast } = useToast()
 
@@ -87,7 +99,7 @@ export function LawChatbot() {
 
     setIsLoadingConversations(true)
     try {
-      const response = await fetch("http://localhost:8000/api/v1/conversations", {
+      const response = await fetch("http://localhost:8000/api/v1/chat-history/conversations", {
         headers: getAuthHeaders(),
       })
 
@@ -104,7 +116,7 @@ export function LawChatbot() {
 
   const loadConversation = async (convId: string) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/conversations/${convId}`, {
+      const response = await fetch(`http://localhost:8000/api/v1/chat-history/conversations/${convId}`, {
         headers: getAuthHeaders(),
       })
 
@@ -142,7 +154,7 @@ export function LawChatbot() {
 
     try {
       const title = firstMessage.slice(0, 50) + (firstMessage.length > 50 ? "..." : "")
-      const response = await fetch("http://localhost:8000/api/v1/conversations", {
+      const response = await fetch("http://localhost:8000/api/v1/chat-history/conversations", {
         method: "POST",
         headers: getAuthHeaders(),
         body: JSON.stringify({ title }),
@@ -160,16 +172,62 @@ export function LawChatbot() {
     return null
   }
 
-  const saveMessage = async (convId: string, role: string, content: string) => {
+  const deleteConversation = async (convId: string) => {
     try {
-      await fetch(`http://localhost:8000/api/v1/conversations/${convId}/messages`, {
-        method: "POST",
+      const response = await fetch(`http://localhost:8000/api/v1/chat-history/conversations/${convId}`, {
+        method: "DELETE",
         headers: getAuthHeaders(),
-        body: JSON.stringify({ role, content }),
       })
+
+      if (response.ok) {
+        toast({
+          title: "Success",
+          description: "Conversation deleted successfully",
+        })
+
+        // If deleted conversation was active, start new chat
+        if (conversationId === convId) {
+          startNewChat()
+        }
+
+        // Refresh conversation list
+        loadConversations()
+      } else {
+        throw new Error("Failed to delete")
+      }
     } catch (error) {
-      console.error("Failed to save message:", error)
+      console.error("Failed to delete conversation:", error)
+      toast({
+        title: "Error",
+        description: "Failed to delete conversation",
+        variant: "destructive",
+      })
     }
+  }
+
+  const confirmLetterGeneration = () => {
+    if (!pendingAction) return
+
+    // Store the description in localStorage to pass to letter generator page
+    localStorage.setItem("letter_generation_prompt", pendingAction.description)
+    localStorage.setItem("letter_type", pendingAction.letter_type)
+
+    // Close dialog
+    setShowLetterDialog(false)
+    setPendingAction(null)
+
+    // Redirect to letter generator page
+    router.push("/letter-generator")
+
+    toast({
+      title: "Redirecting...",
+      description: "Taking you to the letter generation section",
+    })
+  }
+
+  const cancelLetterGeneration = () => {
+    setShowLetterDialog(false)
+    setPendingAction(null)
   }
 
   const startNewChat = () => {
@@ -205,11 +263,6 @@ export function LawChatbot() {
         currentConvId = await createNewConversation(content)
       }
 
-      // Save user message to database
-      if (currentConvId) {
-        await saveMessage(currentConvId, "user", content)
-      }
-
       const token = localStorage.getItem("access_token")
       const headers: Record<string, string> = { "Content-Type": "application/json" }
       if (token) {
@@ -222,6 +275,7 @@ export function LawChatbot() {
         body: JSON.stringify({
           messages: [...messages, { role: "user", content }],
           type: "legal",
+          conversation_id: currentConvId,
         }),
       })
 
@@ -232,13 +286,17 @@ export function LawChatbot() {
         role: "assistant",
         content: data.content || data.error || "I am having trouble connecting to my legal database.",
         timestamp: new Date(),
+        suggested_action: data.suggested_action || undefined,
       }
       setMessages((prev) => [...prev, assistantMsg])
 
-      // Save assistant message to database
-      if (currentConvId) {
-        await saveMessage(currentConvId, "assistant", assistantMsg.content)
+      // If there's a suggested action, show the dialog
+      if (data.suggested_action) {
+        setPendingAction(data.suggested_action)
+        setShowLetterDialog(true)
       }
+
+      // Note: Messages are now automatically saved by the backend /chat endpoint
     } catch (error) {
       console.error("[Legal Chat Error]:", error)
       const errorMsg: Message = {
@@ -280,25 +338,41 @@ export function LawChatbot() {
               <p className="text-xs text-muted-foreground px-2">Loading...</p>
             ) : conversations.length > 0 ? (
               conversations.map((conv) => (
-                <button
+                <div
                   key={conv.id}
                   className={cn(
-                    "w-full text-left p-3 rounded-lg hover:bg-muted transition-colors border border-transparent hover:border-border group",
+                    "w-full p-3 rounded-lg hover:bg-muted transition-colors border border-transparent hover:border-border group relative",
                     conversationId === conv.id && "bg-muted border-border"
                   )}
-                  onClick={() => loadConversation(conv.id)}
                 >
-                  <div className="flex items-center gap-2 mb-1">
-                    <MessageSquare className="h-4 w-4 text-primary" />
-                    <span className="text-sm font-medium truncate">{conv.title}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground">
-                      {new Date(conv.updated_at).toLocaleDateString()}
-                    </span>
-                    <span className="text-xs text-muted-foreground">{conv.message_count} msgs</span>
-                  </div>
-                </button>
+                  <button
+                    className="w-full text-left"
+                    onClick={() => loadConversation(conv.id)}
+                  >
+                    <div className="flex items-center gap-2 mb-1 pr-8">
+                      <MessageSquare className="h-4 w-4 text-primary" />
+                      <span className="text-sm font-medium truncate">{conv.title}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(conv.updated_at).toLocaleDateString()}
+                      </span>
+                      <span className="text-xs text-muted-foreground">{conv.message_count} msgs</span>
+                    </div>
+                  </button>
+                  <button
+                    className="absolute top-3 right-3 p-1 rounded-md text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 transition-all"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      if (confirm("Delete this conversation? This cannot be undone.")) {
+                        deleteConversation(conv.id)
+                      }
+                    }}
+                    title="Delete conversation"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
               ))
             ) : (
               <p className="text-xs text-muted-foreground px-2">No conversations yet</p>
@@ -465,6 +539,26 @@ export function LawChatbot() {
         </CardFooter>
       </Card>
       </div>
+
+      {/* Letter Generation Confirmation Card */}
+      {showLetterDialog && pendingAction && (
+        <Card className="fixed bottom-6 right-6 z-50 shadow-2xl border-primary/20 w-[90vw] sm:w-96 animate-in slide-in-from-bottom-4 fade-in duration-300">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Generate Letter</CardTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              Would you like me to help you draft a {pendingAction.letter_type}?
+            </p>
+          </CardHeader>
+          <CardFooter className="gap-2 pt-3">
+            <Button variant="outline" onClick={cancelLetterGeneration} className="flex-1">
+              No, thanks
+            </Button>
+            <Button onClick={confirmLetterGeneration} className="flex-1">
+              Yes, generate it
+            </Button>
+          </CardFooter>
+        </Card>
+      )}
     </div>
   )
 }
